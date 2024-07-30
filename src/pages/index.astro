@@ -1,0 +1,37 @@
+---
+import { API_ADMIN_TOKEN, API_BASE_URL } from "astro:env/server";
+import { Grid } from "../components/Grid";
+
+const users = await fetch(`${API_BASE_URL}/api/admin/users?page=0`, {
+  headers: {
+    Authorization: `Bearer ${API_ADMIN_TOKEN}`,
+  },
+})
+  .then((res) => res.json())
+  .then((data) => {
+    if (data.success) {
+      return data.members;
+    } else {
+      throw new Error("Member fetch failed!");
+    }
+  });
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Project Borealis Admin</title>
+  </head>
+  <body>
+    <div
+      class="md:container md:mx-auto px-4 py-2 prose dark:prose-invert prose-h1:font-bold prose-h1:text-xl prose-a:text-blue-600"
+    >
+      <h1>Project Borealis Admin</h1>
+      <p>Welcome to the Project Borealis admin management panel.</p>
+      <Grid client:load initialRows={users} />
+    </div>
+  </body>
+</html>
