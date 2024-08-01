@@ -2,19 +2,23 @@
 import { API_ADMIN_TOKEN, API_BASE_URL } from "astro:env/server";
 import { Grid } from "../components/Grid";
 
-const users = await fetch(`${API_BASE_URL}/api/admin/users?page=0`, {
-  headers: {
-    Authorization: `Bearer ${API_ADMIN_TOKEN}`,
-  },
-})
-  .then((res) => res.json())
-  .then((data) => {
-    if (data.success) {
-      return data.members;
-    } else {
-      throw new Error("Member fetch failed!");
-    }
-  });
+let users = null;
+
+if (API_BASE_URL && API_ADMIN_TOKEN) {
+  users = await fetch(`${API_BASE_URL}/api/admin/users?page=0`, {
+    headers: {
+      Authorization: `Bearer ${API_ADMIN_TOKEN}`,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success) {
+        return data.members;
+      } else {
+        throw new Error("Member fetch failed!");
+      }
+    });
+}
 ---
 
 <html lang="en">
@@ -31,7 +35,7 @@ const users = await fetch(`${API_BASE_URL}/api/admin/users?page=0`, {
     >
       <h1>Project Borealis Admin</h1>
       <p>Welcome to the Project Borealis admin management panel.</p>
-      <Grid client:load initialRows={users} />
+      {users && <Grid client:load initialRows={users} />}
     </div>
   </body>
 </html>
