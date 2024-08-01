@@ -4,9 +4,9 @@ import { AgGridReact } from "ag-grid-react";
 import { useState } from "react";
 
 export function Grid({ initialRows }: { initialRows: any[] }) {
-  const [rowData, setRowData] = useState(initialRows);
+  const [rowData, _setRowData] = useState(initialRows);
 
-  const [colDefs, setColDefs] = useState([
+  const [colDefs, _setColDefs] = useState([
     { field: "nickname", editable: true },
     { field: "credits_name", headerName: "Credits Name", editable: true },
     { field: "legal_name", headerName: "Legal Name", editable: true },
