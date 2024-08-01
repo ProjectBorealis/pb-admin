@@ -15,10 +15,12 @@ export default defineConfig({
         API_ADMIN_TOKEN: envField.string({
           context: "server",
           access: "secret",
+          optional: true,
         }),
         API_BASE_URL: envField.string({
           context: "server",
           access: "secret",
+          optional: true,
         }),
       },
     },

@@ -27,15 +27,22 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Project Borealis Admin</title>
+    <title>{users ? "Project Borealis Admin" : "Access Denied."}</title>
   </head>
   <body>
     <div
       class="md:container md:mx-auto px-4 py-2 prose dark:prose-invert prose-h1:font-bold prose-h1:text-xl prose-a:text-blue-600"
     >
-      <h1>Project Borealis Admin</h1>
-      <p>Welcome to the Project Borealis admin management panel.</p>
-      {users && <Grid client:load initialRows={users} />}
+      {
+        users && (
+          <>
+            <h1>Project Borealis Admin</h1>
+            <p>Welcome to the Project Borealis admin management panel.</p>
+            <Grid client:load initialRows={users} />
+          </>
+        )
+      }
+      {!users && <h1>Access Denied.</h1>}
     </div>
   </body>
 </html>
