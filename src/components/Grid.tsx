@@ -7,7 +7,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, _setRowData] = useState(initialRows);
 
   const [colDefs, _setColDefs] = useState([
-    { field: "nickname", editable: true },
+    { field: "nickname", editable: true, filter: true, pinned: "left" },
     { field: "credits_name", headerName: "Credits Name", editable: true },
     { field: "legal_name", headerName: "Legal Name", editable: true },
     { field: "timezone", editable: true },
@@ -35,7 +35,8 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       },
       editable: true,
     },
-    { field: "teams", editable: true },
+    { field: "title", editable: true },
+    { field: "teams", editable: true, filter: true },
     { field: "github", editable: true },
     { field: "discord", editable: true },
     { field: "google", editable: true },
@@ -67,12 +68,44 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
     { field: "end_reason", headerName: "Leave Reason", editable: true },
   ]);
 
+  const [gridOptions, _setGridOptions] = useState({
+    getRowStyle: (param) => {
+      const status = param.data.member_status;
+      const teams = new Set(param.data.teams);
+      if (status.startsWith("Removed")) {
+        return {
+          background: "#EF5350",
+        };
+      }
+      if (status.startsWith("On Leave")) {
+        return {
+          background: "#BDBDBD",
+        };
+      }
+      if (
+        teams.has("Team Leads") ||
+        teams.has("Directors") ||
+        teams.has("Production") ||
+        teams.has("Managers")
+      ) {
+        return {
+          background: "#E0F2F1",
+        };
+      }
+      return undefined;
+    },
+  });
+
   return (
     <div
       className="ag-theme-alpine" // applying the Data Grid theme
       style={{ height: 500 }} // the Data Grid will fill the size of the parent container
     >
-      <AgGridReact rowData={rowData} columnDefs={colDefs} />
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+        gridOptions={gridOptions}
+      />
     </div>
   );
 }
