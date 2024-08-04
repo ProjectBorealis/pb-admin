@@ -21,6 +21,13 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
 }
 ---
 
+<style>
+  html,
+  body {
+    height: 100%;
+  }
+</style>
+
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -30,14 +37,16 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
     <title>{users ? "Project Borealis Admin" : "Access Denied."}</title>
   </head>
   <body>
-    <div
-      class="md:container md:mx-auto px-4 py-2 prose dark:prose-invert prose-h1:font-bold prose-h1:text-xl prose-a:text-blue-600"
-    >
+    <div class="w-full h-full px-4 py-2">
       {
         users && (
           <>
-            <h1>Project Borealis Admin</h1>
-            <p>Welcome to the Project Borealis admin management panel.</p>
+            <div class="prose dark:prose-invert prose-h1:font-bold prose-h1:text-xl prose-a:text-blue-600 mb-2">
+              <h1 class="mb-1">Project Borealis Admin</h1>
+              <p class="mt-0">
+                Welcome to the Project Borealis admin management panel.
+              </p>
+            </div>
             <Grid client:load initialRows={users} />
           </>
         )

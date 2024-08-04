@@ -1,3 +1,4 @@
+import type { ColDef, GridOptions } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional Theme applied to the Data Grid
 import { AgGridReact } from "ag-grid-react";
@@ -6,7 +7,7 @@ import { useState } from "react";
 export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, _setRowData] = useState(initialRows);
 
-  const [colDefs, _setColDefs] = useState([
+  const [colDefs, _setColDefs] = useState<ColDef[]>([
     { field: "nickname", editable: true, filter: true, pinned: "left" },
     { field: "credits_name", headerName: "Credits Name", editable: true },
     { field: "legal_name", headerName: "Legal Name", editable: true },
@@ -16,7 +17,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       headerName: "Status",
       filter: true,
       filterParams: {
-        filterOptions: ["contains"],
+        filterOptions: ["contains", "notContains"],
         maxNumConditions: 1,
       },
       cellEditor: "agSelectCellEditor",
@@ -68,7 +69,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
     { field: "end_reason", headerName: "Leave Reason", editable: true },
   ]);
 
-  const [gridOptions, _setGridOptions] = useState({
+  const [gridOptions, _setGridOptions] = useState<GridOptions>({
     getRowStyle: (param) => {
       const status = param.data.member_status;
       const teams = new Set(param.data.teams);
@@ -99,7 +100,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
   return (
     <div
       className="ag-theme-alpine" // applying the Data Grid theme
-      style={{ height: 500 }} // the Data Grid will fill the size of the parent container
+      style={{ height: "94%" }} // the Data Grid will fill the size of the parent container
     >
       <AgGridReact
         rowData={rowData}
