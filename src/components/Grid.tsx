@@ -2,19 +2,15 @@ import type { ColDef, GridOptions } from "ag-grid-community";
 import {
   AllCommunityModule,
   ModuleRegistry,
-  provideGlobalGridOptions,
+  themeAlpine,
 } from "ag-grid-community";
-import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
-import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional Theme applied to the Data Grid
 import { AgGridReact } from "ag-grid-react";
 import { useState } from "react";
-import { useDarkMode } from "usehooks-ts";
 
 // Register all community features
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-// Mark all grids as using legacy themes
-provideGlobalGridOptions({ theme: "legacy" });
+const theme = themeAlpine;
 
 export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, _setRowData] = useState(initialRows);
@@ -81,10 +77,13 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
     { field: "end_reason", headerName: "Leave Reason", editable: true },
   ]);
 
+  //const { isDarkMode } = useDarkMode({ initializeWithValue: false });
+  const isDarkMode = false;
+
   const [gridOptions, _setGridOptions] = useState<GridOptions>({
-    getRowStyle: (param) => {
-      const status = param.data.member_status;
-      const teams = new Set(param.data.teams);
+    getRowStyle: (params) => {
+      const status = params.data.member_status;
+      const teams = new Set(params.data.teams);
       if (status.startsWith("Removed")) {
         return {
           background: "#EF5350",
@@ -92,7 +91,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       }
       if (status.startsWith("On Leave")) {
         return {
-          background: "#BDBDBD",
+          background: params.context.isDarkMode ? "#808080" : "#BDBDBD",
         };
       }
       if (
@@ -102,18 +101,15 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
         teams.has("Managers")
       ) {
         return {
-          background: "#E0F2F1",
+          background: params.context.isDarkMode ? "#181e28" : "#E0F2F1",
         };
       }
       return undefined;
     },
   });
 
-  const { isDarkMode } = useDarkMode();
-
   return (
     <div
-      className="ag-theme-alpine" // applying the Data Grid theme
       data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"}
       style={{ height: "94%" }} // the Data Grid will fill the size of the parent container
     >
@@ -121,6 +117,8 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
         rowData={rowData}
         columnDefs={colDefs}
         gridOptions={gridOptions}
+        theme={theme}
+        context={{ isDarkMode }}
       />
     </div>
   );
