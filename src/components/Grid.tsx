@@ -1,9 +1,20 @@
 import type { ColDef, GridOptions } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  provideGlobalGridOptions,
+} from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional Theme applied to the Data Grid
 import { AgGridReact } from "ag-grid-react";
 import { useState } from "react";
 import { useDarkMode } from "usehooks-ts";
+
+// Register all community features
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Mark all grids as using legacy themes
+provideGlobalGridOptions({ theme: "legacy" });
 
 export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, _setRowData] = useState(initialRows);
