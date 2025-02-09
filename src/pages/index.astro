@@ -1,6 +1,7 @@
 ---
 import { API_ADMIN_TOKEN, API_BASE_URL } from "astro:env/server";
 import { Grid } from "../components/Grid";
+import "../styles/global.css";
 
 let users = null;
 
@@ -36,7 +37,7 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
     <meta name="generator" content={Astro.generator} />
     <title>{users ? "Project Borealis Admin" : "Access Denied."}</title>
   </head>
-  <body>
+  <body class="dark:bg-gray-900">
     <div class="w-full h-full px-4 py-2">
       {
         users && (

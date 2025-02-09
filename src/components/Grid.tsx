@@ -3,6 +3,7 @@ import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the 
 import "ag-grid-community/styles/ag-theme-alpine.css"; // Optional Theme applied to the Data Grid
 import { AgGridReact } from "ag-grid-react";
 import { useState } from "react";
+import { useDarkMode } from "usehooks-ts";
 
 export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, _setRowData] = useState(initialRows);
@@ -97,9 +98,12 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
     },
   });
 
+  const { isDarkMode } = useDarkMode();
+
   return (
     <div
       className="ag-theme-alpine" // applying the Data Grid theme
+      data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"}
       style={{ height: "94%" }} // the Data Grid will fill the size of the parent container
     >
       <AgGridReact
