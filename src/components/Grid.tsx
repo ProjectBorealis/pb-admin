@@ -5,15 +5,20 @@ import {
   themeAlpine,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Register all community features
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const theme = themeAlpine;
 
+let addingNewRow = false;
+let pendingUpdates = [];
+
 export function Grid({ initialRows }: { initialRows: any[] }) {
-  const [rowData, _setRowData] = useState(initialRows);
+  const [rowData, setRowData] = useState(initialRows);
+  const [hasPendingUpdates, setHasPendingUpdates] = useState(false);
+  const [hasAdds, setHasAdds] = useState(false);
 
   const [colDefs, _setColDefs] = useState<ColDef[]>([
     { field: "nickname", editable: true, filter: true, pinned: "left" },
@@ -106,20 +111,59 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       }
       return undefined;
     },
+    editType: "fullRow",
   });
 
+  // Create a gridRef
+  const gridRef = useRef(null);
+
+  useEffect(() => {
+    if (addingNewRow) {
+      const lastIndex = rowData.length - 1;
+      const gridApi = gridRef.current?.api;
+      console.log(addingNewRow, lastIndex, gridApi);
+      if (gridApi) {
+        gridApi.ensureIndexVisible(lastIndex, "bottom");
+        addingNewRow = false;
+      }
+    }
+  }, [addingNewRow, gridRef, rowData]);
+
   return (
-    <div
-      data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"}
-      style={{ height: "94%" }} // the Data Grid will fill the size of the parent container
-    >
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={colDefs}
-        gridOptions={gridOptions}
-        theme={theme}
-        context={{ isDarkMode }}
-      />
+    <div style={{ height: "90%" }}>
+      <div
+        data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"} 
+         style={{ height: "99%" }} // the Data Grid will fill the size of the parent container
+      >
+        <AgGridReact
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={colDefs}
+          gridOptions={gridOptions}
+          theme={theme}
+          context={{ isDarkMode }}
+          onRowValueChanged={(row) => {
+            pendingUpdates.push(row.data);
+            setHasPendingUpdates(pendingUpdates.length > 0);
+          }}
+        />
+      </div>
+      <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer" onClick={() => {
+        const newItem = { nickname: "New Member", credits_name: "", legal_name: "", timezone: "", member_status: "Onboarding", title: "", teams: "", github: "", discord: "", google: "", reddit: "", email: "", steamworks: "", steamid: "", va: "No", nda: "No", cla: "No", scenefusion: "No", join_date: "", end_date: "", end_reason: "" };
+        addingNewRow = true;
+        setRowData((prevRowData) => [...prevRowData, newItem]);
+        setHasAdds(true);
+      }}>+ Add Member</button>
+      <span>&nbsp;</span>
+      <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:bg-green-900" disabled={!hasPendingUpdates} onClick={() => {
+        
+      }}>&#10003; Save Changes</button>
+      <span>&nbsp;</span>
+      <button className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:bg-red-900" disabled={!hasAdds && !hasPendingUpdates} onClick={() => {
+        window.location.reload();
+      }}>X Discard Changes</button>
+      <span>&nbsp;</span>
+      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer">&#10227; Update Memberships</button>
     </div>
   );
 }
