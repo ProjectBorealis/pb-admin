@@ -12,7 +12,7 @@ let users = null;
 const auth = Astro.cookies.get("CF_Authorization");
 
 let output = {};
-let permissions = new Set();
+//let permissions = new Set();
 
 if (auth) {
   output = await fetch(

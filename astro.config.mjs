@@ -23,6 +23,11 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
+      CF_ACCESS_DOMAIN: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
     },
   },
 
