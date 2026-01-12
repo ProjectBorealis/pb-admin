@@ -115,7 +115,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
   });
 
   // Create a gridRef
-  const gridRef = useRef(null);
+  const gridRef = useRef<AgGridReact>(null);
 
   useEffect(() => {
     if (addingNewRow) {
@@ -132,8 +132,8 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
   return (
     <div style={{ height: "90%" }}>
       <div
-        data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"} 
-         style={{ height: "99%" }} // the Data Grid will fill the size of the parent container
+        data-ag-theme-mode={isDarkMode ? "dark-blue" : "light"}
+        style={{ height: "99%" }} // the Data Grid will fill the size of the parent container
       >
         <AgGridReact
           ref={gridRef}
@@ -148,22 +148,61 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
           }}
         />
       </div>
-      <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer" onClick={() => {
-        const newItem = { nickname: "New Member", credits_name: "", legal_name: "", timezone: "", member_status: "Onboarding", title: "", teams: "", github: "", discord: "", google: "", reddit: "", email: "", steamworks: "", steamid: "", va: "No", nda: "No", cla: "No", scenefusion: "No", join_date: "", end_date: "", end_reason: "" };
-        addingNewRow = true;
-        setRowData((prevRowData) => [...prevRowData, newItem]);
-        setHasAdds(true);
-      }}>+ Add Member</button>
+      <button
+        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
+        onClick={() => {
+          const newItem = {
+            nickname: "New Member",
+            credits_name: "",
+            legal_name: "",
+            timezone: "",
+            member_status: "Onboarding",
+            title: "",
+            teams: "",
+            github: "",
+            discord: "",
+            google: "",
+            reddit: "",
+            email: "",
+            steamworks: "",
+            steamid: "",
+            va: "No",
+            nda: "No",
+            cla: "No",
+            scenefusion: "No",
+            join_date: "",
+            end_date: "",
+            end_reason: "",
+          };
+          addingNewRow = true;
+          setRowData((prevRowData) => [...prevRowData, newItem]);
+          setHasAdds(true);
+        }}
+      >
+        + Add Member
+      </button>
       <span>&nbsp;</span>
-      <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:bg-green-900" disabled={!hasPendingUpdates} onClick={() => {
-        
-      }}>&#10003; Save Changes</button>
+      <button
+        className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:bg-green-900"
+        disabled={!hasPendingUpdates}
+        onClick={() => {}}
+      >
+        &#10003; Save Changes
+      </button>
       <span>&nbsp;</span>
-      <button className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:bg-red-900" disabled={!hasAdds && !hasPendingUpdates} onClick={() => {
-        window.location.reload();
-      }}>X Discard Changes</button>
+      <button
+        className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:bg-red-900"
+        disabled={!hasAdds && !hasPendingUpdates}
+        onClick={() => {
+          window.location.reload();
+        }}
+      >
+        X Discard Changes
+      </button>
       <span>&nbsp;</span>
-      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer">&#10227; Update Memberships</button>
+      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer">
+        &#10227; Update Memberships
+      </button>
     </div>
   );
 }

@@ -1,9 +1,29 @@
 ---
-import { API_ADMIN_TOKEN, API_BASE_URL } from "astro:env/server";
+import {
+  API_ADMIN_TOKEN,
+  API_BASE_URL,
+  CF_ACCESS_DOMAIN,
+} from "astro:env/server";
 import { Grid } from "../components/Grid";
 import "../styles/global.css";
 
 let users = null;
+
+const auth = Astro.cookies.get("CF_Authorization");
+
+let output = {};
+let permissions = new Set();
+
+if (auth) {
+  output = await fetch(
+    `https://${CF_ACCESS_DOMAIN}/cdn-cgi/access/get-identity`,
+    {
+      headers: {
+        cookie: `CF_Authorization=${auth}`,
+      },
+    },
+  ).then((data) => data.json());
+}
 
 if (API_BASE_URL && API_ADMIN_TOKEN) {
   users = await fetch(`${API_BASE_URL}/api/admin/users`, {
@@ -47,6 +67,7 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
               <p class="mt-0">
                 Welcome to the Project Borealis admin management panel.
               </p>
+              <code>{JSON.stringify(output)}</code>
             </div>
             <Grid client:load initialRows={users} />
           </>
