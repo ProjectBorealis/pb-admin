@@ -28,6 +28,11 @@ export default defineConfig({
         access: "secret",
         optional: true,
       }),
+      GITHUB_ORG_ID: envField.number({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
     },
   },
 

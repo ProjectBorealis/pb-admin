@@ -3,6 +3,7 @@ import {
   API_ADMIN_TOKEN,
   API_BASE_URL,
   CF_ACCESS_DOMAIN,
+  GITHUB_ORG_ID,
 } from "astro:env/server";
 import { Grid } from "../components/Grid";
 import "../styles/global.css";
@@ -11,11 +12,21 @@ let users = null;
 
 const auth = Astro.cookies.get("CF_Authorization");
 
-let output = {};
-//let permissions = new Set();
+let isAdmin = false;
+let canManage = false;
+
+const ADMIN_TEAMS = new Set(["Directors", "Production", "Managers"]);
+const MANAGER_TEAMS = new Set([
+  "Directors",
+  "Production",
+  "Team Leads",
+  "Managers",
+]);
+
+let teams = new Set();
 
 if (auth) {
-  output = await fetch(
+  const identity = await fetch(
     `https://${CF_ACCESS_DOMAIN}/cdn-cgi/access/get-identity`,
     {
       headers: {
@@ -23,9 +34,24 @@ if (auth) {
       },
     },
   ).then((data) => data.json());
+
+  const myTeams = identity.teams;
+  if (myTeams) {
+    for (const team of myTeams) {
+      if (team.org_id === GITHUB_ORG_ID) {
+        teams.add(team.name);
+        if (!isAdmin && ADMIN_TEAMS.has(team.name)) {
+          isAdmin = true;
+        }
+        if (!canManage && MANAGER_TEAMS.has(team.name)) {
+          canManage = true;
+        }
+      }
+    }
+  }
 }
 
-if (API_BASE_URL && API_ADMIN_TOKEN) {
+if (canManage && API_BASE_URL && API_ADMIN_TOKEN) {
   users = await fetch(`${API_BASE_URL}/api/admin/users`, {
     headers: {
       Authorization: `Bearer ${API_ADMIN_TOKEN}`,
@@ -39,6 +65,19 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
         throw new Error("Member fetch failed!");
       }
     });
+
+  if (!isAdmin) {
+    users = users.filter((user: any) => {
+      const userTeams = user.teams as string[];
+      const userManager = userTeams.some((team) => MANAGER_TEAMS.has(team));
+      // non-admins cannot manage other managers
+      if (userManager) {
+        return false;
+      }
+      // non-admins cannot manage other teams than their own
+      return userTeams.some((team) => teams.has(team));
+    });
+  }
 }
 ---
 
@@ -67,8 +106,6 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
               <p class="mt-0">
                 Welcome to the Project Borealis admin management panel.
               </p>
-              <code>{auth?.value}</code>
-              <code>{JSON.stringify(output)}</code>
             </div>
             <Grid client:load initialRows={users} />
           </>
