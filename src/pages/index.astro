@@ -19,7 +19,7 @@ if (auth) {
     `https://${CF_ACCESS_DOMAIN}/cdn-cgi/access/get-identity`,
     {
       headers: {
-        Cookie: `CF_Authorization=${auth}`,
+        Cookie: `CF_Authorization=${auth.value}`,
       },
     },
   ).then((data) => data.json());
@@ -67,7 +67,7 @@ if (API_BASE_URL && API_ADMIN_TOKEN) {
               <p class="mt-0">
                 Welcome to the Project Borealis admin management panel.
               </p>
-              <code>{auth}</code>
+              <code>{auth?.value}</code>
               <code>{JSON.stringify(output)}</code>
             </div>
             <Grid client:load initialRows={users} />
