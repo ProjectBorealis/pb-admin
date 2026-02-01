@@ -13,7 +13,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const theme = themeAlpine;
 
 let addingNewRow = false;
-let pendingUpdates = [];
+let pendingUpdates: any[] = [];
 
 export function Grid({ initialRows }: { initialRows: any[] }) {
   const [rowData, setRowData] = useState(initialRows);
@@ -143,13 +143,16 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
           theme={theme}
           context={{ isDarkMode }}
           onRowValueChanged={(row) => {
+            if (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member") {
+              return;
+            }
             pendingUpdates.push(row.data);
             setHasPendingUpdates(pendingUpdates.length > 0);
           }}
         />
       </div>
       <button
-        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
+        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-blue-900"
         onClick={() => {
           const newItem = {
             nickname: "New Member",
@@ -183,15 +186,24 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       </button>
       <span>&nbsp;</span>
       <button
-        className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:bg-green-900"
+        className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-green-900"
         disabled={!hasPendingUpdates}
-        onClick={() => {}}
+        onClick={async () => {
+          //const updates = [];
+          while (pendingUpdates.length > 0) {
+            const update = pendingUpdates.shift();
+            if (update) {
+              //updates.push()
+            }
+          }
+         // await Promise.all(updates);
+        }}
       >
         &#10003; Save Changes
       </button>
       <span>&nbsp;</span>
       <button
-        className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:bg-red-900"
+        className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-red-900"
         disabled={!hasAdds && !hasPendingUpdates}
         onClick={() => {
           window.location.reload();
@@ -200,7 +212,7 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
         X Discard Changes
       </button>
       <span>&nbsp;</span>
-      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer">
+      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-900">
         &#10227; Update Memberships
       </button>
     </div>
