@@ -49,7 +49,14 @@ async function handleRequest(request: Request, cookies: any, method: string) {
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    data = { error: "Upstream server returned non-JSON response", details: responseText };
+  }
+
   return new Response(JSON.stringify(data), {
     status: response.status,
     headers: {

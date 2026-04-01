@@ -22,7 +22,13 @@ export const POST: APIRoute = async ({ cookies }) => {
     // No body is expected for this endpoint
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
+  let data;
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    data = { error: "Upstream server returned non-JSON response", details: responseText };
+  }
   return new Response(JSON.stringify(data), {
     status: response.status,
     headers: {
