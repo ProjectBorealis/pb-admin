@@ -5,7 +5,7 @@ import {
   themeAlpine,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TeamsCellEditor } from "./TeamsCellEditor";
 import { TeamsCellRenderer } from "./TeamsCellRenderer";
 
