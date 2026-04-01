@@ -57,21 +57,26 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg p-2 max-h-64 overflow-y-auto w-56 text-sm">
+    <div 
+      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg p-2 overflow-y-auto text-sm"
+      style={{ width: '250px', height: '300px' }}
+    >
       <div className="font-semibold px-1 pb-2 mb-2 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
         Select Teams
       </div>
-      {TEAM_NAMES.map(team => (
-        <label key={team} className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded">
-          <input
-            type="checkbox"
-            checked={selectedTeams.includes(team)}
-            onChange={() => toggleTeam(team)}
-            className="rounded text-blue-600 focus:ring-blue-500 bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
-          />
-          <span className="text-gray-900 dark:text-gray-100">{team}</span>
-        </label>
-      ))}
+      <div className="flex flex-col gap-1 overflow-x-hidden">
+        {TEAM_NAMES.map(team => (
+          <label key={team} className="flex flex-row items-center space-x-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded">
+            <input
+              type="checkbox"
+              checked={selectedTeams.includes(team)}
+              onChange={() => toggleTeam(team)}
+              className="rounded text-blue-600 focus:ring-blue-500 bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <span className="text-gray-900 dark:text-gray-100">{team}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 });
