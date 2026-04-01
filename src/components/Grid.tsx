@@ -221,14 +221,15 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
           setIsUpdating(true);
           const updatePromises: Promise<Response>[] = [];
           for (const rowData of Object.values(pendingUpdates)) {
-            // Strip empty string fields map them to null to satisfy strict backend schema validators (e.g. Zod optional dates/emails)
+            // Globally strip empty string fields and map them to null to satisfy strict backend schema validators.
+            // This cleanly handles optional data, and triggers better 'Required Field' missing errors 
+            // instead of choking on unrelated arbitrary format patterns if a required field is left blank.
             const payload = { ...rowData };
-            const optionalFields = ["google", "steamworks", "email", "end_date", "join_date"];
-            optionalFields.forEach(key => {
+            for (const key of Object.keys(payload)) {
               if (payload[key] === "") {
-                payload[key] = null; 
+                payload[key] = null;
               }
-            });
+            }
 
             updatePromises.push(fetch(`/api/admin/user`, {
               method: payload.member_id ? "PATCH" : "POST",
