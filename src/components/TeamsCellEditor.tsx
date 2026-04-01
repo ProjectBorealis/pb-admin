@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import Select from "react-select";
 
 export const TEAM_NAMES = [
   "Directors",
@@ -48,35 +49,46 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
     };
   });
 
-  const toggleTeam = (team: string) => {
-    setSelectedTeams(prev => 
-      prev.includes(team) 
-        ? prev.filter(t => t !== team)
-        : [...prev, team]
-    );
+  const options = TEAM_NAMES.map(team => ({ value: team, label: team }));
+  const value = options.filter(opt => selectedTeams.includes(opt.value));
+
+  const handleChange = (selectedOptions: any) => {
+    setSelectedTeams(selectedOptions ? selectedOptions.map((opt: any) => opt.value) : []);
   };
 
   return (
-    <div 
-      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg p-2 overflow-y-auto text-sm"
-      style={{ width: '250px', height: '300px' }}
-    >
-      <div className="font-semibold px-1 pb-2 mb-2 border-b border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-        Select Teams
-      </div>
-      <div className="flex flex-col gap-1 overflow-x-hidden">
-        {TEAM_NAMES.map(team => (
-          <label key={team} className="flex flex-row items-center space-x-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-1 rounded">
-            <input
-              type="checkbox"
-              checked={selectedTeams.includes(team)}
-              onChange={() => toggleTeam(team)}
-              className="rounded text-blue-600 focus:ring-blue-500 bg-gray-100 border-gray-300 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <span className="text-gray-900 dark:text-gray-100">{team}</span>
-          </label>
-        ))}
-      </div>
+    <div className="w-[350px]">
+      <Select
+        isMulti
+        options={options}
+        value={value}
+        onChange={handleChange}
+        menuIsOpen={true}
+        autoFocus
+        unstyled
+        classNames={{
+          control: ({ isFocused }) =>
+            `bg-white dark:bg-gray-800 border ${
+              isFocused ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-300 dark:border-gray-600"
+            } rounded shadow-lg px-2 py-1 text-sm hover:border-blue-400 dark:hover:border-gray-500 flex`,
+          menu: () => "mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-xl text-sm overflow-hidden",
+          menuList: () => "max-h-64 overflow-y-auto overflow-x-hidden",
+          option: ({ isFocused, isSelected }) =>
+            `px-3 py-2 cursor-pointer transition-colors ${
+              isSelected
+                ? "bg-blue-600 text-white"
+                : isFocused
+                ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                : "text-gray-700 dark:text-gray-300 bg-transparent"
+            }`,
+          multiValue: () => "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded items-center p-0 m-1 flex shadow-sm",
+          multiValueLabel: () => "text-xs px-2 py-1 font-medium",
+          multiValueRemove: () => "hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-red-500 rounded-r px-1 cursor-pointer transition-colors",
+          input: () => "text-gray-900 dark:text-gray-100 ml-1 py-0.5",
+          placeholder: () => "text-gray-400 dark:text-gray-500 ml-1",
+          valueContainer: () => "gap-1 flex flex-wrap",
+        }}
+      />
     </div>
   );
 });
