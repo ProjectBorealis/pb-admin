@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState, useRef } from "react";
-import Select from "react-select";
+import { createPortal } from "react-dom";
 
-export const TEAM_NAMES = [
+const TEAM_NAMES = [
   "Directors",
   "Production",
   "Team Leads",
@@ -28,7 +28,11 @@ export const TEAM_NAMES = [
 export const TeamsCellEditor = forwardRef((props: any, ref) => {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const selectedTeamsRef = useRef<string[]>([]);
-  
+  const [dropdownBounds, setDropdownBounds] = useState<{ top: number, left: number, width: number } | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     let initial = props.value;
     if (typeof initial === "string") {
@@ -37,62 +41,123 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
     const safeInitial = Array.isArray(initial) ? initial : [];
     setSelectedTeams(safeInitial);
     selectedTeamsRef.current = safeInitial;
-  }, [props.value]);
+  }, []);
 
-  useImperativeHandle(ref, () => {
-    return {
-      getValue() {
-        return selectedTeamsRef.current;
-      },
-      isPopup() {
-        return true;
-      }
-    };
-  });
+  useImperativeHandle(ref, () => ({
+    getValue() {
+      return selectedTeamsRef.current;
+    }
+  }));
 
-  const options = TEAM_NAMES.map(team => ({ value: team, label: team }));
-  const value = options.filter(opt => selectedTeams.includes(opt.value));
-
-  const handleChange = (selectedOptions: any) => {
-    const newTeams = selectedOptions ? selectedOptions.map((opt: any) => opt.value) : [];
+  const toggleTeam = (team: string) => {
+    const newTeams = selectedTeams.includes(team) 
+      ? selectedTeams.filter(t => t !== team)
+      : [...selectedTeams, team];
     setSelectedTeams(newTeams);
     selectedTeamsRef.current = newTeams;
+
+    if (props.onValueChange) {
+      props.onValueChange(newTeams);
+    }
   };
 
+  const openDropdown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (dropdownBounds) {
+      setDropdownBounds(null);
+      return;
+    }
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownBounds({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: Math.max(rect.width, 250),
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!dropdownBounds) return;
+      const target = event.target as Node;
+      if (containerRef.current && containerRef.current.contains(target)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+      setDropdownBounds(null);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownBounds]);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      if (dropdownRef.current && e.target && dropdownRef.current.contains(e.target as Node)) return;
+      if (containerRef.current && e.target && containerRef.current.contains(e.target as Node)) return;
+      if (dropdownBounds) setDropdownBounds(null);
+    };
+    window.addEventListener("scroll", handleScroll, true); 
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [dropdownBounds]);
+
   return (
-    <div className="min-w-[350px] w-full">
-      <Select
-        isMulti
-        options={options}
-        value={value}
-        onChange={handleChange}
-        autoFocus
-        unstyled
-        closeMenuOnSelect={false}
-        menuPosition="fixed"
-        classNames={{
-          control: ({ isFocused }) =>
-            `bg-white dark:bg-gray-800 border ${
-              isFocused ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-300 dark:border-gray-600"
-            } rounded shadow-lg px-2 py-1 text-sm hover:border-blue-400 dark:hover:border-gray-500 flex flex-wrap max-h-32 overflow-y-auto`,
-          menu: () => "mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-xl text-sm",
-          menuList: () => "max-h-64 overflow-y-auto overflow-x-hidden",
-          option: ({ isFocused, isSelected }) =>
-            `px-3 py-2 cursor-pointer transition-colors ${
-              isSelected
-                ? "bg-blue-600 text-white"
-                : isFocused
-                ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                : "text-gray-700 dark:text-gray-300 bg-transparent"
-            }`,
-          multiValue: () => "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded items-center p-0 m-1 flex shadow-sm",
-          multiValueLabel: () => "text-xs px-2 py-1 font-medium",
-          multiValueRemove: () => "hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-red-500 rounded-r px-1 cursor-pointer transition-colors",
-          input: () => "text-gray-900 dark:text-gray-100 ml-1 py-0.5",
-          placeholder: () => "text-gray-400 dark:text-gray-500 ml-1",
-          valueContainer: () => "gap-1 flex flex-wrap",
-        }}
-      />
+    <div
+      ref={containerRef}
+      className="flex items-center w-full h-[40px] px-1.5 py-1 bg-white dark:bg-gray-800 cursor-pointer overflow-hidden border-[1.5px] border-blue-500 rounded ring-[1.5px] ring-blue-500 focus:outline-none"
+      onClick={openDropdown}
+      tabIndex={0}
+      onMouseDown={(e) => e.stopPropagation()} 
+    >
+      <div className="flex flex-wrap gap-1.5 items-start flex-1 h-[32px] w-full overflow-y-auto overflow-x-hidden pr-2 pb-1 custom-scrollbar">
+        {selectedTeams.length === 0 && (
+          <span className="text-gray-400 dark:text-gray-500 text-sm ml-1 mt-0.5">Select teams...</span>
+        )}
+        {selectedTeams.map(team => (
+           <span 
+             key={team} 
+             className="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 text-xs pl-2 pr-1 py-[2px] rounded-full font-medium shadow-sm border border-blue-200 dark:border-blue-700 flex items-center gap-1"
+           >
+             <span className="truncate">{team}</span>
+             <span
+               className="hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-full h-[14px] w-[14px] flex items-center justify-center cursor-pointer transition-colors"
+               onClick={(e) => { e.stopPropagation(); toggleTeam(team); }}
+             >
+               &times;
+             </span>
+           </span>
+        ))}
+      </div>
+      
+      <svg className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0 ml-1 z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+      </svg>
+
+      {dropdownBounds && typeof window !== "undefined" && createPortal(
+        <div
+          ref={dropdownRef}
+          className="absolute z-[99999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg py-1 text-sm max-h-72 overflow-y-auto"
+          style={{ top: dropdownBounds.top + 3, left: dropdownBounds.left, width: dropdownBounds.width }}
+        >
+          {TEAM_NAMES.map(team => {
+            const isSelected = selectedTeams.includes(team);
+            return (
+              <div
+                key={team}
+                onClick={(e) => { e.stopPropagation(); toggleTeam(team); }}
+                className={`px-4 py-2 cursor-pointer transition-colors flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${isSelected ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold" : "text-gray-700 dark:text-gray-300"}`}
+              >
+                {team}
+                {isSelected && (
+                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                )}
+              </div>
+            );
+          })}
+        </div>,
+        document.body
+      )}
     </div>
   );
 });

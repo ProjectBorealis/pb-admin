@@ -5,7 +5,7 @@ import {
   themeAlpine,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TeamsCellEditor } from "./TeamsCellEditor";
 
 // Register all community features
@@ -14,14 +14,20 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const theme = themeAlpine;
 
 let addingNewRow = false;
-let pendingUpdates: Record<string, any> = {};
 
 export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: boolean }) {
-  const [rowData, setRowData] = useState(initialRows);
-  const [hasPendingUpdates, setHasPendingUpdates] = useState(false);
+  const [rowData, setRowData] = useState(structuredClone(initialRows));
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, any>>({});
+  const hasPendingUpdates = Object.keys(pendingUpdates).length > 0 || JSON.stringify(rowData.filter(row => row.nickname && row.nickname.length && row.nickname !== "New Member")) !== JSON.stringify(initialRows);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshProgress, setRefreshProgress] = useState(0);
+
+  const readyToUpdate = typeof window !== "undefined" ? hasPendingUpdates : false;
+  const updateInProgress = typeof window !== "undefined" ? isUpdating || isRefreshing : false;
+
+  console.log(pendingUpdates);
+  console.log("hasPendingUpdates", hasPendingUpdates);
 
   const [colDefs, _setColDefs] = useState<ColDef[]>([
     { field: "nickname", editable: true, filter: true, pinned: "left" },
@@ -57,9 +63,19 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       field: "teams",
       editable: true,
       filter: true,
-      cellEditor: TeamsCellEditor,
+      cellDataType: false, // Totally disable AG-Grid type inference which drops array persistence
+      valueGetter: (params) => params.data.teams || [],
+      valueSetter: (params) => {
+        params.data.teams = params.newValue;
+        return true;
+      },
+      equals: (val1, val2) => {
+        const a = Array.isArray(val1) ? val1 : [];
+        const b = Array.isArray(val2) ? val2 : [];
+        return a.length === b.length && a.every((v, i) => v === b[i]);
+      },
       valueFormatter: (params) => Array.isArray(params.value) ? params.value.join(", ") : params.value,
-      cellDataType: false
+      cellEditor: TeamsCellEditor,
     },
     { field: "github", editable: true },
     { field: "discord", editable: true },
@@ -131,7 +147,6 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
     if (addingNewRow) {
       const lastIndex = rowData.length - 1;
       const gridApi = gridRef.current?.api;
-      console.log(addingNewRow, lastIndex, gridApi);
       if (gridApi) {
         gridApi.ensureIndexVisible(lastIndex, "bottom");
         addingNewRow = false;
@@ -156,11 +171,15 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
             if (row.rowIndex === null) {
               return;
             }
-            if (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member") {
+            if (JSON.stringify(row.data) === JSON.stringify(initialRows[row.rowIndex]) || (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member")) {
+              console.log("match", row.data, initialRows[row.rowIndex])
+              delete pendingUpdates[row.rowIndex.toString()];
+              setPendingUpdates({...pendingUpdates});
               return;
             }
+            console.log("update")
             pendingUpdates[row.rowIndex.toString()] = row.data;
-            setHasPendingUpdates(Object.keys(pendingUpdates).length > 0);
+            setPendingUpdates({...pendingUpdates});
           }}
         />
       </div>
@@ -200,7 +219,7 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       <span>&nbsp;</span>
       <button
         className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-green-900"
-        disabled={!hasPendingUpdates || isRefreshing || isUpdating}
+        disabled={!readyToUpdate || updateInProgress}
         onClick={async () => {
           setIsUpdating(true);
           const updates: Promise<Response>[] = [];
@@ -220,7 +239,7 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       <span>&nbsp;</span>
       <button
         className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-red-900"
-        disabled={!hasPendingUpdates || isRefreshing || isUpdating}
+        disabled={!readyToUpdate || updateInProgress}
         onClick={() => {
           window.location.reload();
         }}
@@ -231,7 +250,7 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       {isAdmin && (
         <button
           className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-900"
-          disabled={isRefreshing || isUpdating}
+          disabled={updateInProgress}
           onClick={async () => {
             setIsRefreshing(true);
             setRefreshProgress(0);

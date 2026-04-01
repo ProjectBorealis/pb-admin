@@ -21,6 +21,14 @@ export async function authorizeUser(authCookie: string | undefined | null): Prom
     teams: new Set(),
   };
 
+  if (import.meta.env.DEV) {
+    console.warn("Local development mode detected. Bypassing Cloudflare Access identity validation and assuming Admin role.");
+    context.isAdmin = true;
+    context.canManage = true;
+    context.teams = new Set(["Directors", "Production", "Managers"]); // Provide proxy sets
+    return context;
+  }
+
   if (!authCookie) {
     return context;
   }
