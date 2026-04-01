@@ -199,10 +199,10 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
             email: "",
             steamworks: "",
             steamid: "",
-            va: "No",
-            nda: "No",
-            cla: "No",
-            scenefusion: "No",
+            va: false,
+            nda: false,
+            cla: false,
+            scenefusion: false,
             join_date: "",
             end_date: "",
             end_reason: "",
@@ -219,16 +219,55 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
         disabled={!readyToUpdate || updateInProgress}
         onClick={async () => {
           setIsUpdating(true);
-          const updates: Promise<Response>[] = [];
+          const updatePromises: Promise<Response>[] = [];
           for (const rowData of Object.values(pendingUpdates)) {
-            updates.push(fetch(`/api/admin/user`, {
-              method: rowData.member_id ? "PATCH" : "POST",
+            // Strip empty string fields map them to null to satisfy strict backend schema validators (e.g. Zod optional dates/emails)
+            const payload = { ...rowData };
+            const optionalFields = ["google", "steamworks", "email", "end_date", "join_date"];
+            optionalFields.forEach(key => {
+              if (payload[key] === "") {
+                payload[key] = null; 
+              }
+            });
+
+            updatePromises.push(fetch(`/api/admin/user`, {
+              method: payload.member_id ? "PATCH" : "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(rowData),
+              body: JSON.stringify(payload),
             }));
           }
-         await Promise.all(updates);
-         window.location.reload();
+          
+          try {
+            const responses = await Promise.all(updatePromises);
+            const failed = responses.find(r => !r.ok);
+            
+            if (failed) {
+              const errorData = await failed.json().catch(() => ({}));
+              console.error("Save Changes failed:", errorData);
+              
+              let errorMessage = "Failed to save changes.\n\n";
+              if (errorData.errors && Array.isArray(errorData.errors)) {
+                errorData.errors.forEach((err: any) => {
+                  const field = err.path ? err.path[err.path.length - 1] : "Field";
+                  errorMessage += `- ${field}: ${err.message}\n`;
+                });
+              } else if (errorData.error) {
+                errorMessage += errorData.error;
+              } else {
+                errorMessage += "Unknown validation error occurred.";
+              }
+              
+              alert(errorMessage);
+              setIsUpdating(false);
+              return; // DO NOT RELOAD!
+            }
+
+            window.location.reload();
+          } catch (e) {
+            console.error(e);
+            setIsUpdating(false);
+            alert("Network error occurred.");
+          }
         }}
       >
         &#10003; {isUpdating ? "Saving..." : "Save Changes"}

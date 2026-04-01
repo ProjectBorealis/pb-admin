@@ -21,8 +21,6 @@ async function handleRequest(request: Request, cookies: any, method: string) {
     });
   }
 
-  // Clone the request because we need to read the body twice (once for validation, once maybe for proxying)
-  // Actually we can just stringify the parsed JSON for proxying
   let payload;
   try {
     payload = await request.clone().json();
@@ -33,34 +31,49 @@ async function handleRequest(request: Request, cookies: any, method: string) {
     });
   }
 
-  if (!canManageUser(payload.teams, auth)) {
-    return new Response(JSON.stringify({ error: "Forbidden: Cannot modify this user's teams or you lack permission to manage this role." }), {
-      status: 403,
+  try {
+    if (!canManageUser(payload.teams, auth)) {
+      return new Response(JSON.stringify({ error: "Forbidden: Cannot modify this user's teams or you lack permission to manage this role." }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+  } catch (e) {
+    return new Response(JSON.stringify({ error: "Internal Server Error during team authorization" }), {
+      status: 500,
       headers: { "Content-Type": "application/json" }
     });
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/admin/user`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_ADMIN_TOKEN}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const responseText = await response.text();
-  let data;
   try {
-    data = JSON.parse(responseText);
-  } catch (e) {
-    data = { error: "Upstream server returned non-JSON response", details: responseText };
-  }
+    const response = await fetch(`${API_BASE_URL}/api/admin/user`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_ADMIN_TOKEN}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  return new Response(JSON.stringify(data), {
-    status: response.status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+    const responseText = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      data = { error: "Upstream server returned non-JSON response", details: responseText };
+    }
+
+    return new Response(JSON.stringify(data), {
+      status: response.status,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: "Fetch to upstream failed", details: e.message }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
 }

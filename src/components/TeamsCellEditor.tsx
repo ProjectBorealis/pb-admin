@@ -28,7 +28,7 @@ const TEAM_NAMES = [
 export const TeamsCellEditor = forwardRef((props: any, ref) => {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const selectedTeamsRef = useRef<string[]>([]);
-  const [dropdownBounds, setDropdownBounds] = useState<{ top: number, left: number, width: number } | null>(null);
+  const [dropdownBounds, setDropdownBounds] = useState<{ top?: number, bottom?: number, left: number, width: number } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -69,11 +69,21 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
     }
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      setDropdownBounds({
-        top: rect.bottom + window.scrollY,
+      const popupHeight = 288; // max-h-72 roughly translates to 288px max
+      const spaceBelow = window.innerHeight - rect.bottom;
+      
+      let bounds: any = {
         left: rect.left + window.scrollX,
         width: Math.max(rect.width, 250),
-      });
+      };
+
+      if (spaceBelow < popupHeight && rect.top > spaceBelow) {
+        bounds.bottom = window.innerHeight - (rect.top + window.scrollY) + 3;
+      } else {
+        bounds.top = rect.bottom + window.scrollY + 3;
+      }
+
+      setDropdownBounds(bounds);
     }
   };
 
@@ -136,7 +146,12 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
         <div
           ref={dropdownRef}
           className="absolute z-[99999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-lg py-1 text-sm max-h-72 overflow-y-auto"
-          style={{ top: dropdownBounds.top + 3, left: dropdownBounds.left, width: dropdownBounds.width }}
+          style={{ 
+            top: dropdownBounds.top, 
+            bottom: dropdownBounds.bottom,
+            left: dropdownBounds.left, 
+            width: dropdownBounds.width 
+          }}
         >
           {TEAM_NAMES.map(team => {
             const isSelected = selectedTeams.includes(team);
