@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState, useRef } from "react";
 import Select from "react-select";
 
 export const TEAM_NAMES = [
@@ -27,24 +27,25 @@ export const TEAM_NAMES = [
 
 export const TeamsCellEditor = forwardRef((props: any, ref) => {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const selectedTeamsRef = useRef<string[]>([]);
   
   useEffect(() => {
     let initial = props.value;
     if (typeof initial === "string") {
       initial = initial.split(",").map((s: string) => s.trim()).filter(Boolean);
     }
-    if (Array.isArray(initial)) {
-      setSelectedTeams(initial);
-    }
+    const safeInitial = Array.isArray(initial) ? initial : [];
+    setSelectedTeams(safeInitial);
+    selectedTeamsRef.current = safeInitial;
   }, [props.value]);
 
   useImperativeHandle(ref, () => {
     return {
       getValue() {
-        return selectedTeams;
+        return selectedTeamsRef.current;
       },
       isPopup() {
-        return true; // Tells AG Grid this is a popup editor
+        return true;
       }
     };
   });
@@ -53,7 +54,9 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
   const value = options.filter(opt => selectedTeams.includes(opt.value));
 
   const handleChange = (selectedOptions: any) => {
-    setSelectedTeams(selectedOptions ? selectedOptions.map((opt: any) => opt.value) : []);
+    const newTeams = selectedOptions ? selectedOptions.map((opt: any) => opt.value) : [];
+    setSelectedTeams(newTeams);
+    selectedTeamsRef.current = newTeams;
   };
 
   return (
@@ -63,11 +66,10 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
         options={options}
         value={value}
         onChange={handleChange}
-        menuIsOpen={true}
         autoFocus
         unstyled
-        menuPortalTarget={typeof window !== "undefined" ? document.body : null}
-        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+        closeMenuOnSelect={false}
+        menuPosition="fixed"
         classNames={{
           control: ({ isFocused }) =>
             `bg-white dark:bg-gray-800 border ${
