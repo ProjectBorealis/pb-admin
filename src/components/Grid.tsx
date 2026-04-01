@@ -58,7 +58,8 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       editable: true,
       filter: true,
       cellEditor: TeamsCellEditor,
-      valueFormatter: (params) => Array.isArray(params.value) ? params.value.join(", ") : params.value
+      valueFormatter: (params) => Array.isArray(params.value) ? params.value.join(", ") : params.value,
+      cellDataType: false
     },
     { field: "github", editable: true },
     { field: "discord", editable: true },
