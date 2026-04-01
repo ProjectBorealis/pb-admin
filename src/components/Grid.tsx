@@ -6,6 +6,7 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useRef, useState } from "react";
+import { TeamsCellEditor } from "./TeamsCellEditor";
 
 // Register all community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -52,7 +53,13 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       editable: true,
     },
     { field: "title", editable: true },
-    { field: "teams", editable: true, filter: true },
+    {
+      field: "teams",
+      editable: true,
+      filter: true,
+      cellEditor: TeamsCellEditor,
+      valueFormatter: (params) => Array.isArray(params.value) ? params.value.join(", ") : params.value
+    },
     { field: "github", editable: true },
     { field: "discord", editable: true },
     { field: "google", editable: true },
@@ -167,7 +174,7 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
             timezone: "",
             member_status: "Onboarding",
             title: "",
-            teams: "",
+            teams: [],
             github: "",
             discord: "",
             google: "",
