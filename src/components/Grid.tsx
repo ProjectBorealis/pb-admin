@@ -13,12 +13,14 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 const theme = themeAlpine;
 
 let addingNewRow = false;
-let pendingUpdates: any[] = [];
+let pendingUpdates: Record<string, any> = {};
 
-export function Grid({ initialRows }: { initialRows: any[] }) {
+export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: boolean }) {
   const [rowData, setRowData] = useState(initialRows);
   const [hasPendingUpdates, setHasPendingUpdates] = useState(false);
-  const [hasAdds, setHasAdds] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
 
   const [colDefs, _setColDefs] = useState<ColDef[]>([
     { field: "nickname", editable: true, filter: true, pinned: "left" },
@@ -143,16 +145,20 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
           theme={theme}
           context={{ isDarkMode }}
           onRowValueChanged={(row) => {
+            if (row.rowIndex === null) {
+              return;
+            }
             if (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member") {
               return;
             }
-            pendingUpdates.push(row.data);
-            setHasPendingUpdates(pendingUpdates.length > 0);
+            pendingUpdates[row.rowIndex.toString()] = row.data;
+            setHasPendingUpdates(Object.keys(pendingUpdates).length > 0);
           }}
         />
       </div>
       <button
         className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-blue-900"
+        disabled={isRefreshing || isUpdating}
         onClick={() => {
           const newItem = {
             nickname: "New Member",
@@ -179,7 +185,6 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
           };
           addingNewRow = true;
           setRowData((prevRowData) => [...prevRowData, newItem]);
-          setHasAdds(true);
         }}
       >
         + Add Member
@@ -187,24 +192,27 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
       <span>&nbsp;</span>
       <button
         className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-green-900"
-        disabled={!hasPendingUpdates}
+        disabled={!hasPendingUpdates || isRefreshing || isUpdating}
         onClick={async () => {
-          //const updates = [];
-          while (pendingUpdates.length > 0) {
-            const update = pendingUpdates.shift();
-            if (update) {
-              //updates.push()
-            }
+          setIsUpdating(true);
+          const updates: Promise<Response>[] = [];
+          for (const rowData of Object.values(pendingUpdates)) {
+            updates.push(fetch(`/api/admin/user`, {
+              method: rowData.member_id ? "PATCH" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(rowData),
+            }));
           }
-         // await Promise.all(updates);
+         await Promise.all(updates);
+         window.location.reload();
         }}
       >
-        &#10003; Save Changes
+        &#10003; {isUpdating ? "Saving..." : "Save Changes"}
       </button>
       <span>&nbsp;</span>
       <button
         className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-red-900"
-        disabled={!hasAdds && !hasPendingUpdates}
+        disabled={!hasPendingUpdates || isRefreshing || isUpdating}
         onClick={() => {
           window.location.reload();
         }}
@@ -212,9 +220,39 @@ export function Grid({ initialRows }: { initialRows: any[] }) {
         X Discard Changes
       </button>
       <span>&nbsp;</span>
-      <button className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-900">
-        &#10227; Update Memberships
-      </button>
+      {isAdmin && (
+        <button
+          className="mt-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-900"
+          disabled={isRefreshing || isUpdating}
+          onClick={async () => {
+            setIsRefreshing(true);
+            setRefreshProgress(0);
+            const limit = 2;
+            const totalUsers = rowData.length;
+            const totalPages = Math.ceil(totalUsers / limit);
+
+            try {
+              for (let page = 1; page <= totalPages; page++) {
+                await fetch(`/api/admin/users/refresh?page=${page}&limit=${limit}`, {
+                  method: "POST",
+                });
+                setRefreshProgress(Math.min(page * limit, totalUsers));
+              }
+              await fetch(`/api/admin/users/refresh/projects`, {
+                method: "POST",
+              });
+            } catch (e) {
+              console.error(e);
+              alert("Failed to update memberships.");
+            } finally {
+              setIsRefreshing(false);
+              setRefreshProgress(0);
+            }
+          }}
+        >
+          &#8635; {isRefreshing ? `Updating (${refreshProgress}/${rowData.length})...` : `Update Memberships`}
+        </button>
+      )}
     </div>
   );
 }

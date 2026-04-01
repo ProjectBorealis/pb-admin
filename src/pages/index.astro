@@ -1,55 +1,13 @@
 ---
-import {
-  API_ADMIN_TOKEN,
-  API_BASE_URL,
-  CF_ACCESS_DOMAIN,
-  GITHUB_ORG_ID,
-} from "astro:env/server";
-import { Grid } from "../components/Grid";
-import "../styles/global.css";
+import { API_ADMIN_TOKEN, API_BASE_URL } from "astro:env/server";
+import { Grid } from "@/components/Grid";
+import { authorizeUser, canManageUser } from "@/utils/auth";
+import "@/styles/global.css";
 
 let users = null;
 
 const auth = Astro.cookies.get("CF_Authorization");
-
-let isAdmin = false;
-let canManage = false;
-
-const ADMIN_TEAMS = new Set(["Directors", "Production", "Managers"]);
-const MANAGER_TEAMS = new Set([
-  "Directors",
-  "Production",
-  "Team Leads",
-  "Managers",
-]);
-
-let teams = new Set();
-
-if (auth) {
-  const identity = await fetch(
-    `https://${CF_ACCESS_DOMAIN}/cdn-cgi/access/get-identity`,
-    {
-      headers: {
-        Cookie: `CF_Authorization=${auth.value}`,
-      },
-    },
-  ).then((data) => data.json());
-
-  const myTeams = identity.teams;
-  if (myTeams) {
-    for (const team of myTeams) {
-      if (team.org_id === GITHUB_ORG_ID) {
-        teams.add(team.name);
-        if (!isAdmin && ADMIN_TEAMS.has(team.name)) {
-          isAdmin = true;
-        }
-        if (!canManage && MANAGER_TEAMS.has(team.name)) {
-          canManage = true;
-        }
-      }
-    }
-  }
-}
+const { isAdmin, canManage, teams } = await authorizeUser(auth?.value);
 
 if (canManage && API_BASE_URL && API_ADMIN_TOKEN) {
   users = await fetch(`${API_BASE_URL}/api/admin/users`, {
@@ -67,16 +25,9 @@ if (canManage && API_BASE_URL && API_ADMIN_TOKEN) {
     });
 
   if (!isAdmin) {
-    users = users.filter((user: any) => {
-      const userTeams = user.teams as string[];
-      const userManager = userTeams.some((team) => MANAGER_TEAMS.has(team));
-      // non-admins cannot manage other managers
-      if (userManager) {
-        return false;
-      }
-      // non-admins cannot manage other teams than their own
-      return userTeams.some((team) => teams.has(team));
-    });
+    users = users.filter((user: any) =>
+      canManageUser(user.teams, { isAdmin, canManage, teams }),
+    );
   }
 }
 ---
@@ -107,7 +58,7 @@ if (canManage && API_BASE_URL && API_ADMIN_TOKEN) {
                 Welcome to the Project Borealis admin management panel.
               </p>
             </div>
-            <Grid client:load initialRows={users} />
+            <Grid client:load initialRows={users} isAdmin={isAdmin} />
           </>
         )
       }
