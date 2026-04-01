@@ -57,7 +57,7 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
   };
 
   return (
-    <div className="w-[350px]">
+    <div className="min-w-[350px] w-full">
       <Select
         isMulti
         options={options}
@@ -66,12 +66,14 @@ export const TeamsCellEditor = forwardRef((props: any, ref) => {
         menuIsOpen={true}
         autoFocus
         unstyled
+        menuPortalTarget={typeof window !== "undefined" ? document.body : null}
+        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
         classNames={{
           control: ({ isFocused }) =>
             `bg-white dark:bg-gray-800 border ${
               isFocused ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-300 dark:border-gray-600"
-            } rounded shadow-lg px-2 py-1 text-sm hover:border-blue-400 dark:hover:border-gray-500 flex`,
-          menu: () => "mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-xl text-sm overflow-hidden",
+            } rounded shadow-lg px-2 py-1 text-sm hover:border-blue-400 dark:hover:border-gray-500 flex flex-wrap max-h-32 overflow-y-auto`,
+          menu: () => "mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-xl text-sm",
           menuList: () => "max-h-64 overflow-y-auto overflow-x-hidden",
           option: ({ isFocused, isSelected }) =>
             `px-3 py-2 cursor-pointer transition-colors ${
