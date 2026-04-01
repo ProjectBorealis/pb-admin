@@ -7,6 +7,7 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { TeamsCellEditor } from "./TeamsCellEditor";
+import { TeamsCellRenderer } from "./TeamsCellRenderer";
 
 // Register all community features
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -25,9 +26,6 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
 
   const readyToUpdate = typeof window !== "undefined" ? hasPendingUpdates : false;
   const updateInProgress = typeof window !== "undefined" ? isUpdating || isRefreshing : false;
-
-  console.log(pendingUpdates);
-  console.log("hasPendingUpdates", hasPendingUpdates);
 
   const [colDefs, _setColDefs] = useState<ColDef[]>([
     { field: "nickname", editable: true, filter: true, pinned: "left" },
@@ -75,6 +73,7 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
         return a.length === b.length && a.every((v, i) => v === b[i]);
       },
       valueFormatter: (params) => Array.isArray(params.value) ? params.value.join(", ") : params.value,
+      cellRenderer: TeamsCellRenderer,
       cellEditor: TeamsCellEditor,
     },
     { field: "github", editable: true },
@@ -172,12 +171,10 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
               return;
             }
             if (JSON.stringify(row.data) === JSON.stringify(initialRows[row.rowIndex]) || (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member")) {
-              console.log("match", row.data, initialRows[row.rowIndex])
               delete pendingUpdates[row.rowIndex.toString()];
               setPendingUpdates({...pendingUpdates});
               return;
             }
-            console.log("update")
             pendingUpdates[row.rowIndex.toString()] = row.data;
             setPendingUpdates({...pendingUpdates});
           }}
