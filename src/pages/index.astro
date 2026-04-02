@@ -62,13 +62,7 @@ if (canManage && API_BASE_URL && API_ADMIN_TOKEN) {
             </>
           )
         }
-        {
-          !users && (
-            <h1 class="prose dark:prose-invert prose-h1:font-bold prose-h1:text-xl prose-a:text-blue-600 mb-2">
-              Access Denied.
-            </h1>
-          )
-        }
+        {!users && <h1 class="mb-1">Access Denied.</h1>}
       </div>
       {
         users && (
