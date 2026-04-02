@@ -167,16 +167,20 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
           theme={theme}
           context={{ isDarkMode }}
           onRowValueChanged={(row) => {
-            if (row.rowIndex === null) {
+            if (!row.node.id) return;
+            
+            const originalRow = row.data.member_id 
+              ? initialRows.find(r => r.member_id === row.data.member_id)
+              : undefined;
+
+            if ((originalRow && JSON.stringify(row.data) === JSON.stringify(originalRow)) || (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member")) {
+              const newUpdates = { ...pendingUpdates };
+              delete newUpdates[row.node.id];
+              setPendingUpdates(newUpdates);
               return;
             }
-            if (JSON.stringify(row.data) === JSON.stringify(initialRows[row.rowIndex]) || (!row.data.nickname || !row.data.nickname.length || row.data.nickname === "New Member")) {
-              delete pendingUpdates[row.rowIndex.toString()];
-              setPendingUpdates({...pendingUpdates});
-              return;
-            }
-            pendingUpdates[row.rowIndex.toString()] = row.data;
-            setPendingUpdates({...pendingUpdates});
+            
+            setPendingUpdates(prev => ({ ...prev, [row.node.id!]: row.data }));
           }}
         />
       </div>
