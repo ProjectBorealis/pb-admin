@@ -64,8 +64,8 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       filterParams: {
         textMatcher: ({ filterOption, value, filterText }: any) => {
           if (!filterText) return true;
-          
-          const teams = Array.isArray(value) ? value : [];
+
+          const teams = Array.isArray(value) ? value : value.split(",").map((t: string) => t.trim());
           const query = filterText.toLowerCase();
 
           if (filterOption === 'notEqual' || filterOption === 'notContains') {
