@@ -61,6 +61,28 @@ export function Grid({ initialRows, isAdmin }: { initialRows: any[], isAdmin?: b
       field: "teams",
       editable: true,
       filter: true,
+      filterParams: {
+        textMatcher: ({ filterOption, value, filterText }: any) => {
+          if (!filterText) return true;
+          
+          const teams = Array.isArray(value) ? value : [];
+          const query = filterText.toLowerCase();
+
+          if (filterOption === 'notEqual' || filterOption === 'notContains') {
+             return !teams.some((t: string) => t.toLowerCase().includes(query));
+          }
+
+          return teams.some((t: string) => {
+            const team = t.toLowerCase();
+            if (filterOption === 'equals' || filterOption === 'exact') {
+              return team === query;
+            }
+            // For general filtering ('contains'), anchor to the start of the team name
+            // so typing 'Design' strictly matches the 'Design' team, not 'Sound Design'.
+            return team.startsWith(query);
+          });
+        }
+      },
       cellDataType: false, // Totally disable AG-Grid type inference which drops array persistence
       valueGetter: (params) => params.data.teams || [],
       valueSetter: (params) => {
